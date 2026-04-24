@@ -8,9 +8,9 @@ import {
   Loader2, 
   Sparkles, 
   XCircle,
-  Database,
-  ShieldCheck,
-  Cpu
+  BrainCircuit,
+  Lock,
+  Activity
 } from "lucide-react";
 
 const App = () => {
@@ -20,7 +20,7 @@ const App = () => {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Function to handle file selection
+  // File selection handler
   const onFileChange = (e) => {
     setFile(e.target.files[0]);
     setAnswer("");
@@ -34,12 +34,11 @@ const App = () => {
       const formData = new FormData();
       formData.append("file", file);
       
-      // Replace with your actual backend URL
       const res = await axios.post("http://localhost:5000/upload", formData);
       setDocumentId(res.data.documentId);
     } catch (err) {
       console.error(err);
-      alert("System Error: Failed to ingest document.");
+      alert("DocuMind Error: Ingestion failed.");
     } finally {
       setLoading(false);
     }
@@ -57,155 +56,137 @@ const App = () => {
       setAnswer(res.data.answer);
     } catch (err) {
       console.error(err);
-      alert("Neural Link Failure: Query could not be processed.");
+      alert("DocuMind Error: Neural retrieval failed.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-300 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-cyan-500/30">
       
-      {/* Background Decorative Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-900/20 blur-[120px] rounded-full" />
-        <div className="absolute top-[60%] -right-[5%] w-[30%] h-[30%] bg-cyan-900/10 blur-[100px] rounded-full" />
+      {/* Dynamic Background Glow */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-900/10 blur-[150px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-900/10 blur-[150px] rounded-full" />
       </div>
 
-      <div className="relative max-w-4xl mx-auto py-12 px-6">
+      <div className="relative max-w-5xl mx-auto py-12 px-6">
         
-        {/* Header Section */}
-        <header className="mb-12 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-6">
-            <Cpu size={14} className="text-indigo-400" />
-            <span className="text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase">Neural Processing Unit Active</span>
+        {/* Navigation / Header */}
+        <nav className="flex justify-between items-center mb-16 px-4 py-3 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-cyan-400 to-indigo-600 p-2 rounded-xl">
+              <BrainCircuit size={24} className="text-white" />
+            </div>
+            <h1 className="text-xl font-black tracking-tighter text-white">
+              DocuMind <span className="text-cyan-400 italic font-medium">AI</span>
+            </h1>
           </div>
-          
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400">
-              RAG-Based
-            </span>
-            <br /> Document Intelligence System
-          </h1>
-          <p className="text-slate-500 max-w-lg mx-auto text-sm leading-relaxed">
-            Extract insights and query complex PDFs using advanced Retrieval-Augmented Generation.
-          </p>
-        </header>
+          <div className="flex items-center gap-4 text-[10px] font-mono font-bold text-slate-500">
+            <span className="flex items-center gap-1.5"><Lock size={12}/> ENCRYPTED</span>
+            <span className="flex items-center gap-1.5 text-emerald-500"><Activity size={12}/> ENGINE ACTIVE</span>
+          </div>
+        </nav>
 
-        <main className="grid gap-8">
+        <div className="grid lg:grid-cols-5 gap-8 items-start">
           
-          {/* Step 1: Document Ingestion */}
-          <section className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 backdrop-blur-md shadow-2xl">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-500/20">
-                <Database size={24} className="text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-white leading-none">Document Ingestion</h2>
-                <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">Phase 01: Vectorization</p>
-              </div>
+          {/* Left Column: Input & Controls */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white/[0.03] border border-white/10 p-8 rounded-3xl backdrop-blur-xl shadow-2xl">
+              <h2 className="text-lg font-bold text-white mb-2">Knowledge Base</h2>
+              <p className="text-xs text-slate-500 mb-6 uppercase tracking-widest">Feed the Mind</p>
+              
+              {!documentId ? (
+                <div className="space-y-4">
+                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-white/10 rounded-2xl hover:border-cyan-500/40 hover:bg-cyan-500/5 transition-all cursor-pointer group">
+                    <div className="flex flex-col items-center text-center px-4">
+                      <Upload className="mb-3 text-slate-600 group-hover:text-cyan-400 transition-colors" size={28} />
+                      <p className="text-sm font-medium text-slate-400 truncate w-full">
+                        {file ? file.name : "Choose Source File"}
+                      </p>
+                    </div>
+                    <input type="file" className="hidden" onChange={onFileChange} accept=".pdf,.doc,.docx,.txt" />
+                  </label>
+                  
+                  {file && (
+                    <button 
+                      onClick={uploadFile}
+                      disabled={loading}
+                      className="w-full bg-cyan-500 hover:bg-cyan-400 text-[#050505] font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {loading ? <Loader2 className="animate-spin" size={20} /> : "Vectorize PDF"}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-between animate-in zoom-in-95">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-emerald-500 rounded-lg">
+                      <CheckCircle className="text-white" size={16} />
+                    </div>
+                    <p className="text-xs font-bold text-emerald-400 uppercase truncate max-w-[100px]">Ingested</p>
+                  </div>
+                  <button onClick={() => {setDocumentId(""); setFile(null); setAnswer("")}} className="text-slate-500 hover:text-red-400">
+                    <XCircle size={20} />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {!documentId ? (
-              <div className="space-y-4">
-                <label className="relative group flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-slate-800 rounded-2xl hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-all cursor-pointer">
-                  <div className="flex flex-col items-center justify-center p-6 text-center">
-                    <Upload className="mb-3 text-slate-600 group-hover:text-indigo-400 transition-colors" size={32} />
-                    <p className="text-sm font-medium text-slate-400">
-                      {file ? <span className="text-indigo-400 font-bold">{file.name}</span> : "Drop PDF or Click to Browse"}
-                    </p>
-                    <p className="text-[10px] text-slate-600 mt-2">PDF, DOCX, or TXT up to 20MB</p>
-                  </div>
-                  <input type="file" className="hidden" onChange={onFileChange} accept=".pdf,.doc,.docx,.txt" />
-                </label>
-                
-                {file && (
-                  <button 
-                    onClick={uploadFile}
-                    disabled={loading}
-                    className="w-full bg-white hover:bg-slate-100 text-black font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
-                  >
-                    {loading ? <Loader2 className="animate-spin" size={20} /> : <><Sparkles size={20} /> Initialize Ingestion</>}
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center justify-between p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl animate-in zoom-in-95 duration-300">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-emerald-500 rounded-full">
-                    <CheckCircle className="text-white" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-emerald-400">Index Finalized</p>
-                    <p className="text-xs text-slate-400 truncate max-w-[200px]">{file?.name}</p>
-                  </div>
-                </div>
+            <div className="px-6 py-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl italic text-[11px] text-slate-500">
+              "DocuMind uses semantic search to locate specific data points across 100s of pages in milliseconds."
+            </div>
+          </div>
+
+          {/* Right Column: Interaction */}
+          <div className={`lg:col-span-3 transition-all duration-700 ${!documentId ? "opacity-20 grayscale" : "opacity-100"}`}>
+            <div className="bg-white/[0.03] border border-white/10 p-8 rounded-3xl backdrop-blur-xl min-h-[400px] flex flex-col">
+              <h2 className="text-lg font-bold text-white mb-2">Neural Interface</h2>
+              <p className="text-xs text-slate-500 mb-8 uppercase tracking-widest italic font-serif">Ask anything about your data</p>
+
+              <div className="relative mb-8">
+                <input
+                  type="text"
+                  placeholder={documentId ? "Enter your prompt..." : "Waiting for document..."}
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && askQuestion()}
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl py-5 pl-6 pr-16 text-white focus:outline-none focus:border-cyan-500/50 transition-all shadow-inner"
+                />
                 <button 
-                  onClick={() => {setDocumentId(""); setFile(null); setAnswer("")}}
-                  className="p-2 text-slate-600 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                  onClick={askQuestion}
+                  disabled={loading || !question}
+                  className="absolute right-3 top-3 bottom-3 px-4 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 disabled:opacity-20 transition-all"
                 >
-                  <XCircle size={22} />
+                  {loading ? <Loader2 size={18} className="animate-spin text-cyan-400" /> : <Send size={18} />}
                 </button>
               </div>
-            )}
-          </section>
 
-          {/* Step 2: Contextual Query */}
-          <section className={`transition-all duration-700 ${!documentId ? "opacity-30 blur-[2px] pointer-events-none" : "opacity-100"}`}>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-cyan-600 rounded-2xl shadow-lg shadow-cyan-500/20">
-                <Send size={24} className="text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-white leading-none">Intelligence Query</h2>
-                <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">Phase 02: Semantic Retrieval</p>
-              </div>
-            </div>
-
-            <div className="relative group">
-              <input
-                type="text"
-                placeholder="Query the document insights..."
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && askQuestion()}
-                className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-5 pl-6 pr-16 text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all shadow-xl"
-              />
-              <button 
-                onClick={askQuestion}
-                disabled={loading || !question}
-                className="absolute right-3 top-3 bottom-3 px-5 bg-cyan-600 text-white rounded-xl hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-600 transition-all flex items-center justify-center shadow-lg shadow-cyan-600/20"
-              >
-                {loading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
-              </button>
-            </div>
-
-            {/* Answer Panel */}
-            {answer && (
-              <div className="mt-8 bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden animate-in slide-in-from-top-6 duration-500 shadow-2xl">
-                <div className="px-6 py-3 bg-slate-800/50 border-b border-slate-800 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <ShieldCheck size={14} className="text-cyan-400" /> Synthesized Response
-                  </span>
+              {answer && (
+                <div className="flex-1 space-y-4 animate-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex items-center gap-2 text-cyan-500 font-mono text-[10px] font-bold uppercase tracking-widest">
+                    <Sparkles size={14}/> Result Synthesis
+                  </div>
+                  <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl text-slate-300 leading-relaxed font-light text-sm shadow-xl">
+                    {answer}
+                  </div>
                 </div>
-                <div className="p-8 leading-relaxed text-slate-200">
-                  <p className="whitespace-pre-wrap">{answer}</p>
-                </div>
-              </div>
-            )}
-          </section>
-        </main>
+              )}
 
-        <footer className="mt-16 pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">
-            Local Instance: 127.0.0.1:5000
-          </p>
-          <div className="flex gap-6">
-             <div className="flex items-center gap-2">
-               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-               <span className="text-[10px] font-mono text-slate-500 uppercase">Vector Database Linked</span>
-             </div>
+              {!answer && !loading && (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-600 opacity-40">
+                  <FileText size={48} className="mb-4" strokeWidth={1} />
+                  <p className="text-sm">Response will appear here</p>
+                </div>
+              )}
+            </div>
           </div>
+
+        </div>
+
+        <footer className="mt-12 text-center text-[10px] font-mono text-slate-700 tracking-[0.5em] uppercase">
+          Build v26.4 // Node-RAG // Localhost:5000
         </footer>
       </div>
     </div>
