@@ -10,8 +10,7 @@ export const uploadFile = async (req, res) => {
     }
 
     const filePath = req.file.path;
-
-    // rest of code...
+    const documentId = Date.now().toString();
 
     const text = await parsePDF(filePath);
     const chunks = chunkText(text);
@@ -22,17 +21,23 @@ export const uploadFile = async (req, res) => {
       const embedding = await getEmbedding(chunks[i]);
 
       vectors.push({
-        id: `chunk-${i}`,
+        id: `${documentId}-chunk-${i}`, 
         values: embedding,
         metadata: {
-          text: chunks[i]
+          text: chunks[i],
+          documentId
         }
       });
     }
 
     await insertVectors(vectors);
 
-    res.json({ message: "File processed & stored in Endee" });
+    res.json({
+      message: "File processed & stored in Endee",
+      documentId
+    });
+    console.log("TEXT LENGTH:", text.length);
+    console.log("DOCUMENT ID STORED:", documentId);
 
   } catch (err) {
     console.error(err);

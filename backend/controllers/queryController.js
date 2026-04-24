@@ -3,57 +3,77 @@ import { searchVectors } from "../services/endeeService.js";
 
 export const queryDocument = async (req, res) => {
   try {
-    const { question } = req.body;
-
+    const { question, documentId } = req.body;
     if (!question) {
       return res.status(400).json({ error: "Question is required" });
     }
-
-    // 1. Embedding
+    // Embedding
     const queryVector = await getEmbedding(question);
-
-    // 2. Search
-    const results = await searchVectors(queryVector);
-
+    // Search
+    const results = await searchVectors(queryVector, documentId, question);
     const matches = results?.data?.matches || [];
-
     const contexts = matches
       .map(m => m?.metadata?.text || "")
       .join("\n");
-
     const lines = contexts
       .split("\n")
       .map(line => line.trim())
       .filter(line => line.length > 0);
-
     const uniqueLines = [...new Set(lines)];
 
 let answer = "No relevant information found.";
 
 if (uniqueLines.length > 0) {
-  const personName = uniqueLines.find(l =>
-    l.toLowerCase().includes("anunay")
-  ) || "";
 
-  const roleLine = uniqueLines.find(l =>
-    l.toLowerCase().includes("computer science")
-  ) || "";
+  const q = question.toLowerCase();
+  if (q.includes("how many") || q.includes("number of")) {
+  const projectIndex = uniqueLines.findIndex(line =>
+    line.toLowerCase().includes("project")
+  );
+  if (projectIndex !== -1) {
+    const projectSection = uniqueLines.slice(projectIndex + 1);
+    const stopIndex = projectSection.findIndex(line =>
+      line.toLowerCase().includes("skills") ||
+      line.toLowerCase().includes("education") ||
+      line.toLowerCase().includes("certification") ||
+      line.toLowerCase().includes("internship")
+    );
+    const cleanProjects = stopIndex !== -1
+      ? projectSection.slice(0, stopIndex)
+      : projectSection;
+    const projects = cleanProjects.filter(line => {
+  const lower = line.toLowerCase();
 
-  const summaryLine = uniqueLines.find(l =>
-    l.toLowerCase().includes("motivated")
-  ) || "";
+  return (
+    (line.includes("–") || line.includes("-")) &&  
+    !lower.includes("tech stack") &&
+    !lower.includes("built") &&
+    !lower.includes("implemented") &&
+    !lower.includes("developed") &&
+    !lower.includes("using") &&
+    line.length < 100   // 
+  );
+});
+    const count = projects.length;
+    answer = count > 0
+      ? `There are ${count} projects mentioned in the document.`
+      : "Could not determine project count.";
 
-  // Remove duplication if both lines are similar
-  const cleanSummary =
-    summaryLine && summaryLine !== roleLine ? summaryLine : "";
-
-  answer = `${personName} is a ${roleLine || "Computer Science student"}.${
-    cleanSummary ? `\n\n${cleanSummary}` : ""
-  }`;
+  } else {
+    answer = "Project section not found in the document.";
+  }
+} 
+  else {
+    // Default: return clean context
+    answer = uniqueLines.slice(0, 5).join("\n");
+  }
 }
+console.log("MATCHES:", matches);
+console.log("CONTEXT:", contexts);
     return res.json({ answer });
 
-  } catch (err) {
+  } 
+  catch (err) {
     console.error("QUERY ERROR:", err);
 
     if (!res.headersSent) {
