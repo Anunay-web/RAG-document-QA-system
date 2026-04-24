@@ -1,83 +1,87 @@
 import { getEmbedding } from "../services/embeddingService.js";
 import { searchVectors } from "../services/endeeService.js";
+import { generateAnswer } from "../services/llmService.js";
 
 export const queryDocument = async (req, res) => {
   try {
     const { question, documentId } = req.body;
+
     if (!question) {
       return res.status(400).json({ error: "Question is required" });
     }
-    // Embedding
+
+    const q = question.toLowerCase();
+
+    // 🔹 embedding
     const queryVector = await getEmbedding(question);
-    // Search
+
+    // 🔹 retrieval
     const results = await searchVectors(queryVector, documentId, question);
     const matches = results?.data?.matches || [];
-    const contexts = matches
-      .map(m => m?.metadata?.text || "")
-      .join("\n");
-    const lines = contexts
+
+    if (!matches.length) {
+      return res.json({ answer: "No relevant information found." });
+    }
+
+    // 🔹 select best chunks
+    const topMatches = matches
+      .filter(m => m.score > 0.2) // 🔥 lower threshold
+      .slice(0, 5);
+
+    const rawContext = topMatches
+      .map(m => m.metadata.text)
+      .join("\n---\n");
+
+    // 🔹 clean context (GENERIC)
+    const cleanedContext = rawContext
       .split("\n")
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-    const uniqueLines = [...new Set(lines)];
+      .map(l => l.trim())
+      .filter(line => {
+        if (line.length < 20) return false;
+        if (line.split(" ").length < 5) return false;
+        if (/\S+@\S+\.\S+/.test(line)) return false;
+        if (/https?:\/\/\S+/.test(line)) return false;
+        return true;
+      })
+      .join("\n");
 
-let answer = "No relevant information found.";
+    if (!cleanedContext) {
+      return res.json({ answer: "No useful content found." });
+    }
 
-if (uniqueLines.length > 0) {
+    // 🔥 COUNT QUESTIONS
+    if (q.includes("how many") || q.includes("number of")) {
+      const count = cleanedContext
+        .split("\n")
+        .filter(line => line.includes("-") || line.includes("–")).length;
 
-  const q = question.toLowerCase();
-  if (q.includes("how many") || q.includes("number of")) {
-  const projectIndex = uniqueLines.findIndex(line =>
-    line.toLowerCase().includes("project")
-  );
-  if (projectIndex !== -1) {
-    const projectSection = uniqueLines.slice(projectIndex + 1);
-    const stopIndex = projectSection.findIndex(line =>
-      line.toLowerCase().includes("skills") ||
-      line.toLowerCase().includes("education") ||
-      line.toLowerCase().includes("certification") ||
-      line.toLowerCase().includes("internship")
-    );
-    const cleanProjects = stopIndex !== -1
-      ? projectSection.slice(0, stopIndex)
-      : projectSection;
-    const projects = cleanProjects.filter(line => {
-  const lower = line.toLowerCase();
+      return res.json({
+        answer:
+          count > 0
+            ? `There are ${count} items mentioned in the document.`
+            : "Could not determine count.",
+      });
+    }
 
-  return (
-    (line.includes("–") || line.includes("-")) &&  
-    !lower.includes("tech stack") &&
-    !lower.includes("built") &&
-    !lower.includes("implemented") &&
-    !lower.includes("developed") &&
-    !lower.includes("using") &&
-    line.length < 100   // 
-  );
-});
-    const count = projects.length;
-    answer = count > 0
-      ? `There are ${count} projects mentioned in the document.`
-      : "Could not determine project count.";
+    // 🔥 "WHO / WHAT" GENERIC HANDLING
+    if (q.startsWith("who") || q.startsWith("what")) {
+      const bestLine = cleanedContext
+        .split("\n")
+        .sort((a, b) => b.length - a.length)[0];
 
-  } else {
-    answer = "Project section not found in the document.";
-  }
-} 
-  else {
-    // Default: return clean context
-    answer = uniqueLines.slice(0, 5).join("\n");
-  }
-}
-console.log("MATCHES:", matches);
-console.log("CONTEXT:", contexts);
+      if (bestLine) {
+        return res.json({ answer: bestLine });
+      }
+    }
+
+    // 🔹 LLM fallback
+    const limitedContext = cleanedContext.slice(0, 1000);
+    const answer = await generateAnswer(limitedContext, question);
+
     return res.json({ answer });
 
-  } 
-  catch (err) {
+  } catch (err) {
     console.error("QUERY ERROR:", err);
-
-    if (!res.headersSent) {
-      return res.status(500).json({ error: "Query failed" });
-    }
+    return res.status(500).json({ error: "Query failed" });
   }
 };
